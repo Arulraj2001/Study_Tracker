@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Banking Exam Pro | Smart Study Dashboard</title>
+    <!-- Bootstrap 5 + Icons + Fonts + Animations -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Google Fonts for better typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        body {
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: #f0f5fe;
+            scroll-behavior: smooth;
+        }
+        /* Modern Dark Mode */
+        body.dark-mode {
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+        body.dark-mode .card, 
+        body.dark-mode .sidebar, 
+        body.dark-mode .navbar,
+        body.dark-mode .list-group-item,
+        body.dark-mode .modal-content {
+            background: #1e293b !important;
+            color: #f1f5f9 !important;
+            border-color: #334155 !important;
+        }
+        body.dark-mode .text-muted {
+            color: #94a3b8 !important;
+        }
+        body.dark-mode .table {
+            color: #cbd5e1;
+        }
+        body.dark-mode .btn-outline-secondary {
+            border-color: #475569;
+            color: #cbd5e6;
+        }
+        /* Cards & Sidebar */
+        .card {
+            border: none;
+            border-radius: 28px;
+            background: #ffffff;
+            box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 32px -12px rgba(0, 0, 0, 0.12);
+        }
+        .sidebar {
+            background: white;
+            border-radius: 28px;
+            padding: 1.2rem 0.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.03);
+            position: sticky;
+            top: 80px;
+        }
+        .nav-link {
+            border-radius: 18px;
+            padding: 10px 18px;
+            margin: 5px 8px;
+            font-weight: 500;
+            color: #1e293b;
+        }
+        body.dark-mode .nav-link {
+            color: #cbd5e6;
+        }
+        .nav-link.active, .nav-link:hover {
+            background: linear-gradient(95deg, #0d6efd10 0%, #0d6efd20 100%);
+            color: #0d6efd;
+        }
+        .progress-bar-custom {
+            border-radius: 20px;
+            background: #e2e8f0;
+        }
+        /* Task styling */
+        .task-item {
+            background: #f8fafc;
+            border-radius: 18px;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+        body.dark-mode .task-item {
+            background: #0f172a;
+        }
+        .task-check:checked + label {
+            text-decoration: line-through;
+            opacity: 0.65;
+        }
+        /* badges */
+        .badge-status {
+            font-size: 0.7rem;
+            border-radius: 40px;
+            padding: 5px 10px;
+        }
+        .floating-action {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 1060;
+            border-radius: 60px;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.2);
+        }
+        .note-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 320px;
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            box-shadow: 0 35px 60px rgba(0,0,0,0.25);
+            z-index: 2000;
+            border: none;
+        }
+        body.dark-mode .note-popup {
+            background: #1e293b;
+            border: 1px solid #475569;
+        }
+        .overlay-blur {
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1999;
+        }
+        .resource-card {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .resource-card:hover {
+            transform: scale(1.01);
+            background: #f1f5f9;
+        }
+        body.dark-mode .resource-card:hover {
+            background: #334155;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                margin-bottom: 1rem;
+                position: relative;
+                top: 0;
+            }
+            .floating-action {
+                bottom: 16px;
+                right: 16px;
+            }
+        }
+        .stat-circle {
+            font-size: 2rem;
+            font-weight: 800;
+        }
+        .btn-icon {
+            border-radius: 40px;
+        }
+        footer {
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Premium Navbar -->
+<nav class="navbar navbar-expand-lg sticky-top py-3 shadow-sm" style="background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold fs-4" href="#"><i class="bi bi-bank2 text-primary me-2"></i>Banking<span class="text-primary">Pro</span></a>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarMain">
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 gap-1">
+                <li class="nav-item"><a class="nav-link rounded-pill" href="#" data-section="dashboard"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link rounded-pill" href="#" data-section="weekly"><i class="bi bi-calendar-week me-1"></i> Planner</a></li>
+                <li class="nav-item"><a class="nav-link rounded-pill" href="#" data-section="analytics"><i class="bi bi-graph-up me-1"></i> Analytics</a></li>
+                <li class="nav-item"><a class="nav-link rounded-pill" href="#" data-section="resources"><i class="bi bi-folder2-open me-1"></i> Resources</a></li>
+                <li class="nav-item"><a class="nav-link rounded-pill" href="#" data-section="settings"><i class="bi bi-gear me-1"></i> Settings</a></li>
+                <li class="nav-item ms-2"><button id="darkModeToggle" class="btn btn-outline-secondary rounded-pill px-3"><i class="bi bi-moon-stars me-1"></i> Dark/Light</button></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid mt-4 px-3 px-lg-4">
+    <div class="row g-4">
+        <!-- Sidebar (Quick Access) -->
+        <div class="col-lg-3 col-md-4">
+            <div class="sidebar p-3">
+                <div class="d-flex align-items-center mb-3 px-2">
+                    <i class="bi bi-calendar-check fs-5 text-primary me-2"></i>
+                    <span class="fw-semibold">Smart Focus</span>
+                </div>
+                <div class="nav flex-column nav-pills">
+                    <a class="nav-link active" href="#" data-section="dashboard"><i class="bi bi-house-door me-2"></i>Overview Hub</a>
+                    <a class="nav-link" href="#" data-section="weekly"><i class="bi bi-calendar-week me-2"></i>Weekly Schedule</a>
+                    <a class="nav-link" href="#" data-section="analytics"><i class="bi bi-bar-chart-steps me-2"></i>Performance</a>
+                    <a class="nav-link" href="#" data-section="revision"><i class="bi bi-arrow-repeat me-2"></i>Revision Zone</a>
+                </div>
+                <hr class="my-3">
+                <div class="mt-2 px-2">
+                    <small class="text-muted"><i class="bi bi-info-circle-fill text-primary me-1"></i> Consistency > Intensity</small>
+                    <div class="mt-2" id="liveDate"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dynamic Content Area -->
+        <div class="col-lg-9 col-md-8">
+            <!-- Dashboard Section (default) -->
+            <div id="dashboardSection">
+                <div class="row g-4">
+                    <!-- Daily Tracker Card Enhanced -->
+                    <div class="col-12">
+                        <div class="card p-4">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+                                <h4 class="fw-semibold"><i class="bi bi-list-check text-success me-2"></i>Daily Command Center</h4>
+                                <div><span class="fw-bold fs-5" id="dailyProgressPercent">0%</span> <span class="text-muted">completed</span></div>
+                            </div>
+                            <div class="progress mb-4" style="height: 12px; border-radius: 20px;">
+                                <div id="dailyProgressBar" class="progress-bar bg-gradient bg-success" style="width:0%; border-radius:20px;"></div>
+                            </div>
+                            <div id="dailyTasksList" class="mt-2"></div>
+                            <div class="mt-3 text-muted small"><i class="bi bi-pencil-square"></i> Click note icon to add personal notes</div>
+                        </div>
+                    </div>
+                    <!-- Today's Subjects -->
+                    <div class="col-md-6">
+                        <div class="card h-100 p-4">
+                            <h5><i class="bi bi-calculator-fill text-info me-2"></i>Quants Radar</h5>
+                            <div class="progress mb-3" style="height: 8px;"><div id="quantsProgressBar" class="progress-bar bg-info" style="width:0%"></div></div>
+                            <div id="quantsTopicsList"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 p-4">
+                            <h5><i class="bi bi-puzzle-fill text-warning me-2"></i>Reasoning Mastery</h5>
+                            <div class="progress mb-3" style="height: 8px;"><div id="reasoningProgressBar" class="progress-bar bg-warning" style="width:0%"></div></div>
+                            <div id="reasoningTopicsList"></div>
+                        </div>
+                    </div>
+                    <!-- Quick Stats -->
+                    <div class="col-12">
+                        <div class="card p-4">
+                            <h5><i class="bi bi-pie-chart-fill text-primary me-2"></i>Snapshot Analytics</h5>
+                            <canvas id="miniPieChart" height="180" style="max-height:200px; width:100%"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Schedule Section -->
+            <div id="weeklySection" style="display:none;">
+                <div class="card p-4">
+                    <h4 class="fw-semibold"><i class="bi bi-calendar-week text-primary me-2"></i>Strategic Weekly Plan</h4>
+                    <p class="text-muted">Follow this roadmap for balanced prep (Quants + Reasoning)</p>
+                    <div id="weeklyTableContainer"></div>
+                </div>
+            </div>
+
+            <!-- Full Analytics Section -->
+            <div id="analyticsSection" style="display:none;">
+                <div class="card p-4">
+                    <h4><i class="bi bi-graph-up me-2"></i>Deep Performance Insights</h4>
+                    <div class="row mt-3">
+                        <div class="col-md-6"><canvas id="fullPieChart" style="max-height:260px"></canvas><p class="text-center mt-2 fw-semibold">Completion Overview</p></div>
+                        <div class="col-md-6"><canvas id="lineProgressChart" style="max-height:260px"></canvas><p class="text-center mt-2 fw-semibold">Weekly Momentum (Simulated)</p></div>
+                    </div>
+                    <div class="row mt-4 text-center">
+                        <div class="col-md-4"><div class="alert alert-primary rounded-4"><i class="bi bi-check2-circle"></i> Topics Done: <strong id="totalDoneCount">0</strong></div></div>
+                        <div class="col-md-4"><div class="alert alert-warning rounded-4"><i class="bi bi-clock-history"></i> Pending: <strong id="totalPendingCount">0</strong></div></div>
+                        <div class="col-md-4"><div class="alert alert-secondary rounded-4"><i class="bi bi-arrow-repeat"></i> Revision: <strong id="totalRevisionCount">0</strong></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Revision Tracker -->
+            <div id="revisionSection" style="display:none;">
+                <div class="card p-4">
+                    <h4><i class="bi bi-arrow-repeat text-warning me-2"></i>Revision Vault</h4>
+                    <p>Topics marked as "Revision" will be listed here for quick revisit</p>
+                    <div id="revisionList" class="d-flex flex-wrap gap-2 mt-3"></div>
+                </div>
+            </div>
+
+            <!-- Resources Section -->
+            <div id="resourcesSection" style="display:none;">
+                <div class="card p-4">
+                    <h4><i class="bi bi-link-45deg me-2"></i>Essential Study Kit</h4>
+                    <div id="resourcesList" class="row g-3 mt-2"></div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div id="settingsSection" style="display:none;">
+                <div class="card p-4">
+                    <h4><i class="bi bi-sliders2 me-2"></i>Customize Dashboard</h4>
+                    <p class="text-muted">Add new daily habit or reset to default</p>
+                    <div class="input-group mb-4">
+                        <input type="text" id="newTaskName" class="form-control rounded-4" placeholder="e.g., 30 min Current Affairs Quiz">
+                        <button id="addTaskBtn" class="btn btn-primary rounded-4 px-4">+ Add Task</button>
+                    </div>
+                    <button id="resetDataBtn" class="btn btn-outline-danger rounded-pill w-auto px-4">⟳ Reset to Default Data</button>
+                    <hr class="my-4">
+                    <small class="text-muted"><i class="bi bi-database"></i> All data is saved locally in your browser.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="row mt-5 mb-3">
+        <div class="col-12 text-center text-muted small py-3">
+            <i class="bi bi-check-circle-fill text-success me-1"></i> Completed: <span id="footerCompleted">0</span> &nbsp;|&nbsp;
+            <i class="bi bi-hourglass-split text-warning me-1"></i> Pending: <span id="footerPending">0</span> &nbsp;|&nbsp;
+            <i class="bi bi-arrow-repeat text-info me-1"></i> Revision: <span id="footerRevision">0</span>
+        </div>
+    </footer>
+</div>
+
+<!-- Note Popup (modal like) -->
+<div id="notePopup" class="note-popup" style="display:none;">
+    <h6 class="mb-2"><i class="bi bi-stickies"></i> Task Note</h6>
+    <textarea id="noteTextArea" rows="3" class="form-control" placeholder="Add your personal note..."></textarea>
+    <div class="d-flex gap-2 mt-3">
+        <button id="saveNoteBtn" class="btn btn-primary btn-sm rounded-pill px-3">Save</button>
+        <button id="closeNoteBtn" class="btn btn-secondary btn-sm rounded-pill px-3">Cancel</button>
+    </div>
+</div>
+<div id="overlayBlur" class="overlay-blur" style="display:none;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ---------- ENHANCED DATA STRUCTURE ----------
+    let appData = {
+        dailyTasks: [
+            { id: 0, name: "📰 Daily Affairs Cloud", completed: false, note: "" },
+            { id: 1, name: "📖 1 Hour English Reading", completed: false, note: "" },
+            { id: 2, name: "📝 1 Reading Comprehension", completed: false, note: "" },
+            { id: 3, name: "🧩 2 Puzzles / Seating Arrangement", completed: false, note: "" },
+            { id: 4, name: "⚡ Speed Maths (Tables/Squares/Cubes/Fractions)", completed: false, note: "" },
+            { id: 5, name: "🏦 Banking Awareness Video + Notes", completed: false, note: "" },
+            { id: 6, name: "📄 DPP PDF (1 PDF daily)", completed: false, note: "" },
+            { id: 7, name: "📘 BBM PRO PDF (Topic-wise 5 pages)", completed: false, note: "" },
+            { id: 8, name: "✍️ Grammar / 1000 Errors (7 rules)", completed: false, note: "" }
+        ],
+        quantsTopics: [
+            { id: 0, name: "Simplification & Approximation", status: "Pending", dateCompleted: null },
+            { id: 1, name: "Number Series", status: "Pending", dateCompleted: null },
+            { id: 2, name: "Quadratic Equations", status: "Pending", dateCompleted: null },
+            { id: 3, name: "Data Interpretation (Bar Graph)", status: "Pending", dateCompleted: null },
+            { id: 4, name: "Arithmetic: Percentages", status: "Pending", dateCompleted: null }
+        ],
+        reasoningTopics: [
+            { id: 0, name: "Alphanumeric Series", status: "Pending", dateCompleted: null },
+            { id: 1, name: "Inequalities (Coded)", status: "Pending", dateCompleted: null },
+            { id: 2, name: "Syllogism", status: "Pending", dateCompleted: null },
+            { id: 3, name: "Blood Relations", status: "Pending", dateCompleted: null },
+            { id: 4, name: "Direction Sense", status: "Pending", dateCompleted: null }
+        ],
+        weeklyQuants: ["📊 Percentage", "💰 Profit & Loss", "📈 Ratio & Proportion", "🧪 Mixture Allegation", "⏱️ Time & Work", "📉 DI Basics", "🔄 Full Revision"],
+        weeklyReasoning: ["🔢 Coding Decoding", "🧩 Linear Puzzle", "🪑 Circular Seating", "✅ Data Sufficiency", "🔗 Logical Connectives", "⌨️ Input Output", "🔄 Full Revision"],
+        resources: [
+            { title: "📘 Banking Awareness 2025 PDF", type: "PDF", link: "#", icon: "bi-file-pdf" },
+            { title: "🧮 Speed Maths 500 Questions", type: "Practice", link: "#", icon: "bi-calculator" },
+            { title: "🎥 English 1000 Errors (Video)", type: "Video", link: "https://www.youtube.com/embed/dQw4w9WgXcQ", icon: "bi-youtube" },
+            { title: "📝 Quants Formula Handbook", type: "Notes", link: "#", icon: "bi-journal-bookmark-fill" }
+        ]
+    };
+
+    function loadData() { const saved = localStorage.getItem("bankingExamPro"); if(saved) appData = JSON.parse(saved); else saveData(); }
+    function saveData() { localStorage.setItem("bankingExamPro", JSON.stringify(appData)); }
+
+    let currentSection = "dashboard";
+    let miniChart, pieChartFull, lineChart;
+
+    // Helper stats
+    function getStats() {
+        const dailyComp = appData.dailyTasks.filter(t => t.completed).length;
+        const dailyTotal = appData.dailyTasks.length;
+        const quantsComp = appData.quantsTopics.filter(t => t.status === "Completed").length;
+        const quantsTotal = appData.quantsTopics.length;
+        const reasoningComp = appData.reasoningTopics.filter(t => t.status === "Completed").length;
+        const reasoningTotal = appData.reasoningTopics.length;
+        const revisionCount = [...appData.quantsTopics, ...appData.reasoningTopics].filter(t => t.status === "Revision").length;
+        const pendingCount = [...appData.quantsTopics, ...appData.reasoningTopics].filter(t => t.status === "Pending").length;
+        const totalTopicsDone = quantsComp + reasoningComp;
+        return { dailyComp, dailyTotal, quantsComp, quantsTotal, reasoningComp, reasoningTotal, revisionCount, pendingCount, totalTopicsDone };
+    }
+
+    function renderAll() {
+        renderDailyTasks();
+        renderQuantsReasoning();
+        renderWeeklySchedule();
+        renderResources();
+        renderRevisionList();
+        updateProgressAndFooter();
+        updateCharts();
+        saveData();
+    }
+
+    function renderDailyTasks() {
+        const container = document.getElementById("dailyTasksList");
+        if(!container) return;
+        let html = `<div class="d-flex flex-column gap-2">`;
+        appData.dailyTasks.forEach(task => {
+            html += `<div class="task-item d-flex justify-content-between align-items-center">
+                        <div class="form-check">
+                            <input class="form-check-input task-checkbox" type="checkbox" data-id="${task.id}" id="task${task.id}" ${task.completed ? "checked" : ""} style="width:1.2rem;height:1.2rem;">
+                            <label class="form-check-label ms-2 fw-500" for="task${task.id}">${task.name}</label>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-secondary rounded-circle note-btn" data-id="${task.id}" data-note="${task.note.replace(/"/g, '&quot;')}" title="Add note"><i class="bi bi-pencil-square"></i></button>
+                            ${task.note ? `<i class="bi bi-stickies-fill text-info ms-1" title="${task.note.replace(/"/g, '&quot;')}"></i>` : ""}
+                        </div>
+                    </div>`;
+        });
+        html += `</div>`;
+        container.innerHTML = html;
+        document.querySelectorAll('.task-checkbox').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const id = parseInt(e.target.dataset.id);
+                appData.dailyTasks[id].completed = e.target.checked;
+                renderAll();
+            });
+        });
+        document.querySelectorAll('.note-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(btn.dataset.id);
+                showNotePopup(id, appData.dailyTasks[id].note || "");
+            });
+        });
+    }
+
+    function renderQuantsReasoning() {
+        const qDiv = document.getElementById("quantsTopicsList");
+        const rDiv = document.getElementById("reasoningTopicsList");
+        if(qDiv) qDiv.innerHTML = appData.quantsTopics.map(t => `<div class="d-flex justify-content-between align-items-center mb-3"><span class="fw-medium">${t.name}</span><select class="form-select form-select-sm w-auto status-select rounded-pill" data-type="quants" data-id="${t.id}"><option ${t.status==="Pending"?"selected":""}>Pending</option><option ${t.status==="Completed"?"selected":""}>Completed</option><option ${t.status==="Revision"?"selected":""}>Revision</option></select></div>`).join('');
+        if(rDiv) rDiv.innerHTML = appData.reasoningTopics.map(t => `<div class="d-flex justify-content-between align-items-center mb-3"><span class="fw-medium">${t.name}</span><select class="form-select form-select-sm w-auto status-select rounded-pill" data-type="reasoning" data-id="${t.id}"><option ${t.status==="Pending"?"selected":""}>Pending</option><option ${t.status==="Completed"?"selected":""}>Completed</option><option ${t.status==="Revision"?"selected":""}>Revision</option></select></div>`).join('');
+        
+        document.querySelectorAll('.status-select').forEach(sel => {
+            sel.addEventListener('change', (e) => {
+                const type = sel.dataset.type, id = parseInt(sel.dataset.id);
+                const newStatus = sel.value;
+                if(type === 'quants') appData.quantsTopics[id].status = newStatus;
+                else appData.reasoningTopics[id].status = newStatus;
+                if(newStatus === "Completed") appData[type+"Topics"][id].dateCompleted = new Date().toLocaleDateString();
+                renderAll();
+            });
+        });
+    }
+
+    function renderWeeklySchedule() {
+        const container = document.getElementById("weeklyTableContainer");
+        if(!container) return;
+        const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+        let html = `<div class="table-responsive"><table class="table table-hover align-middle"><thead class="table-light"><tr><th>Day</th><th>📐 Quants Focus</th><th>🧠 Reasoning Focus</th></tr></thead><tbody>`;
+        for(let i=0; i<7; i++) {
+            let isToday = (i === new Date().getDay()-1) && (new Date().getDay() !== 0);
+            let highlightClass = isToday ? "table-primary" : "";
+            html += `<tr class="${highlightClass}"><td class="fw-semibold">${days[i]}</td><td>${appData.weeklyQuants[i]}</td><td>${appData.weeklyReasoning[i]}</td></tr>`;
+        }
+        html += `</tbody></table></div>`;
+        container.innerHTML = html;
+    }
+
+    function renderResources() {
+        const container = document.getElementById("resourcesList");
+        if(container) container.innerHTML = appData.resources.map(r => `<div class="col-md-6 col-lg-4"><div class="card resource-card p-3 h-100"><div class="d-flex align-items-center"><i class="bi ${r.icon || 'bi-file-earmark-text'} fs-2 me-3 text-primary"></i><div><h6 class="mb-0">${r.title}</h6><span class="badge bg-secondary-subtle text-dark">${r.type}</span></div></div></div></div>`).join('');
+    }
+
+    function renderRevisionList() {
+        const revDiv = document.getElementById("revisionList");
+        if(revDiv) {
+            let allRev = [...appData.quantsTopics.filter(t=>t.status==="Revision"), ...appData.reasoningTopics.filter(t=>t.status==="Revision")];
+            revDiv.innerHTML = allRev.length ? allRev.map(t=>`<span class="badge bg-warning text-dark p-3 rounded-pill fs-6"><i class="bi bi-arrow-repeat me-1"></i>${t.name}</span>`).join('') : "<div class='alert alert-light'>✨ No topics marked for revision. Great focus!</div>";
+        }
+    }
+
+    function updateProgressAndFooter() {
+        const s = getStats();
+        const dailyPercent = s.dailyTotal ? (s.dailyComp / s.dailyTotal)*100 : 0;
+        document.getElementById("dailyProgressBar").style.width = `${dailyPercent}%`;
+        document.getElementById("dailyProgressPercent").innerText = `${Math.round(dailyPercent)}%`;
+        if(document.getElementById("quantsProgressBar")) document.getElementById("quantsProgressBar").style.width = `${s.quantsTotal ? (s.quantsComp/s.quantsTotal)*100 : 0}%`;
+        if(document.getElementById("reasoningProgressBar")) document.getElementById("reasoningProgressBar").style.width = `${s.reasoningTotal ? (s.reasoningComp/s.reasoningTotal)*100 : 0}%`;
+        document.getElementById("footerCompleted").innerText = s.totalTopicsDone + s.dailyComp;
+        document.getElementById("footerPending").innerText = (s.dailyTotal - s.dailyComp) + s.pendingCount;
+        document.getElementById("footerRevision").innerText = s.revisionCount;
+        if(document.getElementById("totalDoneCount")) document.getElementById("totalDoneCount").innerText = s.totalTopicsDone;
+        if(document.getElementById("totalPendingCount")) document.getElementById("totalPendingCount").innerText = s.pendingCount;
+        if(document.getElementById("totalRevisionCount")) document.getElementById("totalRevisionCount").innerText = s.revisionCount;
+    }
+
+    function updateCharts() {
+        const s = getStats();
+        const dataMini = [s.dailyComp, s.quantsComp, s.reasoningComp, (s.dailyTotal - s.dailyComp)];
+        if(miniChart) miniChart.destroy();
+        const ctxMini = document.getElementById('miniPieChart').getContext('2d');
+        miniChart = new Chart(ctxMini, { type: 'doughnut', data: { labels: ['Daily Tasks', 'Quants Done', 'Reasoning Done', 'Remaining'], datasets: [{ data: dataMini, backgroundColor: ['#10b981','#3b82f6','#f59e0b','#cbd5e1'], borderWidth:0 }] }, options: { cutout:'60%', responsive: true } });
+        if(pieChartFull) pieChartFull.destroy();
+        const ctxFull = document.getElementById('fullPieChart')?.getContext('2d');
+        if(ctxFull) pieChartFull = new Chart(ctxFull, { type: 'pie', data: { labels: ['Daily Completed','Quants Completed','Reasoning Completed','Pending/Revision'], datasets: [{ data: [s.dailyComp, s.quantsComp, s.reasoningComp, s.pendingCount+s.revisionCount], backgroundColor: ['#34d399','#60a5fa','#fbbf24','#94a3b8'] }] } });
+        if(lineChart) lineChart.destroy();
+        const lineCtx = document.getElementById('lineProgressChart')?.getContext('2d');
+        if(lineCtx) lineChart = new Chart(lineCtx, { type: 'line', data: { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets: [{ label: 'Daily Tasks Completed', data: [3,4,5,6,7,5, s.dailyComp], borderColor: '#0d6efd', backgroundColor: '#0d6efd20', fill: true, tension: 0.3 }] } });
+    }
+
+    function showNotePopup(taskId, currentNote) {
+        const popup = document.getElementById("notePopup");
+        const overlay = document.getElementById("overlayBlur");
+        const textarea = document.getElementById("noteTextArea");
+        textarea.value = currentNote;
+        popup.style.display = "block";
+        overlay.style.display = "block";
+        const saveNote = () => {
+            appData.dailyTasks[taskId].note = textarea.value;
+            popup.style.display = "none";
+            overlay.style.display = "none";
+            renderAll();
+            cleanup();
+        };
+        const closePopup = () => { popup.style.display = "none"; overlay.style.display = "none"; cleanup(); };
+        const cleanup = () => { document.getElementById("saveNoteBtn").removeEventListener("click", saveNote); document.getElementById("closeNoteBtn").removeEventListener("click", closePopup); };
+        document.getElementById("saveNoteBtn").addEventListener("click", saveNote);
+        document.getElementById("closeNoteBtn").addEventListener("click", closePopup);
+    }
+
+    function showSection(section) {
+        const sections = ['dashboard','weekly','analytics','revision','resources','settings'];
+        sections.forEach(sec => { document.getElementById(`${sec}Section`).style.display = sec === section ? "block" : "none"; });
+        if(section === "analytics") setTimeout(()=>updateCharts(), 50);
+        currentSection = section;
+        renderAll();
+    }
+
+    document.querySelectorAll("[data-section]").forEach(link => {
+        link.addEventListener("click", (e) => {
+            e.preventDefault();
+            const sec = link.dataset.section;
+            showSection(sec);
+            document.querySelectorAll(".nav-link").forEach(n=>n.classList.remove("active"));
+            link.classList.add("active");
+        });
+    });
+
+    document.getElementById("addTaskBtn")?.addEventListener("click",()=>{
+        const newName = document.getElementById("newTaskName").value.trim();
+        if(newName) { appData.dailyTasks.push({ id: appData.dailyTasks.length, name: newName, completed: false, note: "" }); renderAll(); document.getElementById("newTaskName").value=""; }
+    });
+    document.getElementById("resetDataBtn")?.addEventListener("click",()=>{ localStorage.removeItem("bankingExamPro"); location.reload(); });
+    document.getElementById("darkModeToggle")?.addEventListener("click",()=>{ document.body.classList.toggle("dark-mode"); localStorage.setItem("darkMode", document.body.classList.contains("dark-mode")); });
+    if(localStorage.getItem("darkMode") === "true") document.body.classList.add("dark-mode");
+    
+    // Live Date
+    function updateDate() { document.getElementById("liveDate") && (document.getElementById("liveDate").innerHTML = `<i class="bi bi-calendar3"></i> ${new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'short', day:'numeric' })}`); }
+    loadData(); renderAll(); showSection("dashboard"); updateDate(); setInterval(()=>{ renderAll(); updateDate(); }, 2000);
+</script>
+</body>
+</html>
